@@ -494,6 +494,34 @@ DEFINE CLASS SupplierColours as Session olepublic
 	
 ENDDEFINE
 
+DEFINE CLASS Schema as Session 
+	
+	CommandText = ""
+	ExceptionMessage = "" 
+	
+	PROCEDURE INIT
+		SET RESOURCE off
+		SET EXCLUSIVE off
+		SET REPROCESS TO 2 seconds
+		SET CPDIALOG off
+		SET DELETED on
+		SET EXACT off
+		SET SAFETY off
+		IF ( not EMPTY(ALIAS())) THEN 
+			this.Name = ALIAS()
+		ENDIF 
+	ENDPROC
+	
+	PROCEDURE CheckTablesExist()
+		helper = CREATEOBJECT('trophiesserver.tablehelper')
+		* TODO change to read from schema.xml
+		helper.CreateTableIfItDoesNotExist( 'g:\tbsdata\test_trophiesserver_updatefromxml.dbf', 'CREATE TABLE g:\tbsdata\test_trophiesserver_updatefromxml.dbf FREE (  table varchar(50), tableid varchar(50), tagname varchar(50), cursor varchar(50), cursorid varchar(50), xml m, debug L )' ) 
+		
+		RELEASE helper
+	ENDPROC
+	 
+ENDDEFINE 
+
 DEFINE CLASS TableHelper as session olepublic
 
 	CommandText = ""
@@ -512,6 +540,25 @@ DEFINE CLASS TableHelper as session olepublic
 		ENDIF 
 	ENDPROC 
 
+	PROCEDURE CreateTableIfItDoesNotExist( path_ as String, definition_ as String ) as Boolean
+		LOCAL result as Boolean
+
+		result = .f. 
+		TRY 
+			IF NOT FILE( path_ ) then
+				this.commandtext = definition_
+				&definition_
+				result = .t.
+			ENDIF 
+		CATCH TO exceptionInstance
+			this.ExceptionMessage = exceptionInstance.Message
+			THROW this.ExceptionMessage 
+		FINALLY
+			
+		ENDTRY 
+		RETURN result 
+	ENDPROC
+	
 	PROCEDURE CheckIndices() as Boolean
 		LOCAL result as Boolean 
 		result = .f.
